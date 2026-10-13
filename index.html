@@ -44,6 +44,22 @@ header{display:flex;align-items:center;justify-content:space-between}
 .card.open{border-color:var(--ac);box-shadow:0 0 24px -8px var(--ac)}
 .meta{display:flex;justify-content:space-between;margin-top:10px;font-size:11.5px;color:var(--mu)}
 .meta em{font-style:normal;color:var(--ac)}
+.card::after{content:"\203A";position:absolute;right:14px;top:8px;color:var(--mu);font-size:24px;line-height:1}
+.card h3{padding-right:18px}
+.bn{display:none;align-items:center;justify-content:space-between;gap:8px;margin:8px 0 0;padding:8px 12px;border-radius:12px;border:1px solid var(--ac);font-size:12px;color:var(--sm)}
+.bn .calm{margin:0;flex:none}
+.sh{position:fixed;inset:0;z-index:30;display:none;align-items:flex-end;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);perspective:900px}
+.sh.on{display:flex}
+.pn{width:100%;max-width:480px;margin:0 auto;max-height:88%;overflow:auto;border-radius:26px 26px 0 0;border:1px solid var(--line);border-bottom:0;background:linear-gradient(160deg,var(--g1),var(--g2)),var(--bg);padding:18px 18px calc(26px + env(safe-area-inset-bottom,0px));box-shadow:0 -18px 50px -22px var(--ac);transform-origin:bottom;animation:rise .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{transform:rotateX(35deg) translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.pn h2{font-size:19px;line-height:1.35;margin:8px 0 10px;font-weight:600}
+.pn .lead{color:var(--tx);font-size:14px;line-height:1.55;margin:0 0 10px}
+.pn ul{margin:0 0 14px;padding-left:20px}
+.pn li{font-size:14px;color:var(--sm);margin:8px 0;line-height:1.55}
+.pn .m2{font-size:12px;color:var(--mu)}
+.pn .cf{font-size:12.5px;color:var(--ac);margin:0 0 14px}
+.pn .x{float:right;font:inherit;color:var(--tx);background:rgba(255,255,255,.1);border:1px solid var(--line);border-radius:50%;width:34px;height:34px;cursor:pointer}
+.b2{display:inline-block;text-decoration:none;background:var(--ac);color:var(--on);font-weight:600;font-size:13.5px;padding:10px 18px;border-radius:999px}
 .btn{text-decoration:none;display:none;margin-top:10px;font:inherit;font-size:12.5px;color:var(--on);background:var(--ac);border:0;border-radius:999px;padding:7px 14px}
 .card.open .btn{display:inline-block}
 footer{margin-top:18px;text-align:center;font-size:12px;color:var(--mu);line-height:1.7}
@@ -64,10 +80,12 @@ footer{margin-top:18px;text-align:center;font-size:12px;color:var(--mu);line-hei
 </header>
 <div class="fd2"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span id="fl"></span><b id="fn"></b></div>
 <div class="chip"><span><i></i><span id="ed"></span></span><span id="cnt"></span></div>
+<div class="bn" id="bn"><span id="bt"></span><button class="calm" id="br"></button></div>
 <div class="scene" id="scene"><div class="tilt" id="tilt"><div class="ring" id="ring"></div></div></div>
 <div class="cards" id="cards"></div>
 <footer><div id="ft"></div><button class="calm" id="calm"></button><button class="calm" id="th"></button></footer>
 </div>
+<div class="sh" id="sh"></div>
 <script>
 var S=[
 {n:{en:"Breaking",hi:"ब्रेकिंग"},k:10,c:"#ff453a"},
@@ -75,14 +93,19 @@ var S=[
 {n:{en:"Finance",hi:"वित्त"},k:10,c:"#30d158"},
 {n:{en:"Crypto",hi:"क्रिप्टो"},k:10,c:"#ffd60a"}];
 var T={
-en:{ed:"Morning Flash · 6:00 AM",pt:"points",h:"Sample headline for point ",s:"A one or two line summary in plain words will appear here, written for fast reading.",src:"Source name · 6:02 AM",ok:"✓ Confirmed by ",btn:"Read source",ft:"Demo data · Next: Evening Flash, 5:00 PM",fl:"Founder ·",fn:"Dhirendra Pandey",calm:["Calm mode: off","Calm mode: on"],th:["Theme: Midnight","Theme: Black"]},
-hi:{ed:"मॉर्निंग फ्लैश · सुबह 6:00",pt:"बिंदु",h:"नमूना शीर्षक, बिंदु ",s:"यहाँ दो पंक्तियों में सरल भाषा में सारांश दिखेगा, तेज़ पढ़ने के लिए।",src:"स्रोत का नाम · सुबह 6:02",ok:"✓ पुष्टि: ",btn:"स्रोत पढ़ें",ft:"डेमो डेटा · अगला: इवनिंग फ्लैश, शाम 5:00",fl:"संस्थापक ·",fn:"धीरेंद्र पांडेय",calm:["शांत मोड: बंद","शांत मोड: चालू"],th:["थीम: मिडनाइट","थीम: ब्लैक"]}};
-var D=null,L="en",I=0,calm=false,TH="dark",$=function(i){return document.getElementById(i)};
+en:{ed:"Morning Flash · 6:00 AM",pt:"points",h:"Sample headline for point ",s:"A one or two line summary in plain words will appear here, written for fast reading.",src:"Source name · 6:02 AM",ok:"✓ Confirmed by ",btn:"Read source",ft:"Demo data · Next: Evening Flash, 5:00 PM",fl:"Founder ·",fn:"Dhirendra Pandey",calm:["Calm mode: off","Calm mode: on"],th:["Theme: Midnight","Theme: Black"],bn:"Showing demo text. Real news has not loaded yet.",rt:"Try again"},
+hi:{ed:"मॉर्निंग फ्लैश · सुबह 6:00",pt:"बिंदु",h:"नमूना शीर्षक, बिंदु ",s:"यहाँ दो पंक्तियों में सरल भाषा में सारांश दिखेगा, तेज़ पढ़ने के लिए।",src:"स्रोत का नाम · सुबह 6:02",ok:"✓ पुष्टि: ",btn:"स्रोत पढ़ें",ft:"डेमो डेटा · अगला: इवनिंग फ्लैश, शाम 5:00",fl:"संस्थापक ·",fn:"धीरेंद्र पांडेय",calm:["शांत मोड: बंद","शांत मोड: चालू"],th:["थीम: मिडनाइट","थीम: ब्लैक"],bn:"डेमो टेक्स्ट दिख रहा है। असली समाचार अभी लोड नहीं हुए।",rt:"फिर कोशिश करें"}};
+var D=null,CUR=[],L="en",I=0,calm=false,TH="dark",$=function(i){return document.getElementById(i)};
 function esc(x){return String(x==null?"":x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-function tm(iso){try{return new Date(iso).toLocaleTimeString(L==="hi"?"hi-IN":"en-IN",{hour:"numeric",minute:"2-digit"})}catch(e){return""}}
+function tm(iso){if(!iso)return"";try{return new Date(iso).toLocaleTimeString(L==="hi"?"hi-IN":"en-IN",{hour:"numeric",minute:"2-digit"})}catch(e){return""}}
 function K(i){return D&&D.sections[i]?D.sections[i].points.length:S[i].k}
 function edT(){var m=D.edition==="morning";return (L==="hi"?(m?"मॉर्निंग फ्लैश":"इवनिंग फ्लैश"):(m?"Morning Flash":"Evening Flash"))+" · "+tm(D.generated)}
 function load(){fetch("news/"+L+".json",{cache:"no-store"}).then(function(r){return r.ok?r.json():Promise.reject()}).then(function(j){D=j;draw()}).catch(function(){D=null;draw()})}
+function openS(p){var t=T[L],bl=p.bullets&&p.bullets.length,ls=bl?p.bullets:[p.summary],h2="";
+var mt=[p.source,tm(p.published)].filter(Boolean).join(" · ");
+$("sh").innerHTML='<div class="pn"><button class="x" id="sx" aria-label="Close">\u2715</button><div class="m2">'+esc(mt)+'</div><h2>'+esc(p.headline)+'</h2>'+(bl?'<p class="lead">'+esc(p.summary)+'</p>':'')+'<ul>'+ls.map(function(x){return "<li>"+esc(x)+"</li>"}).join("")+'</ul><div class="cf">'+t.ok+esc(p.confirmed)+'</div>'+(/^https?:/.test(p.link)?'<a class="b2" href="'+esc(p.link)+'" target="_blank" rel="noopener">'+t.btn+'</a>':'')+'</div>';
+$("sh").className="sh on";$("sx").onclick=closeS}
+function closeS(){$("sh").className="sh"}
 function ring(){var r=$("ring");r.innerHTML="";S.forEach(function(s,i){var f=document.createElement("div");f.className="face";f.style.setProperty("--c",s.c);f.style.transform="rotateY("+i*90+"deg) translateZ(112px)";f.innerHTML="<b></b><span></span>";f.onclick=function(){go(i)};r.appendChild(f)})}
 function go(i){I=(i+4)%4;draw()}
 function draw(){
@@ -90,14 +113,14 @@ var t=T[L],s=S[I];
 document.documentElement.style.setProperty("--ac",s.c);
 $("ring").style.transform="rotateY("+(-I*90)+"deg)";
 Array.prototype.forEach.call($("ring").children,function(f,i){f.className="face"+(i===I?" on":"");f.firstChild.textContent=S[i].n[L];f.lastChild.textContent=K(i)+" "+t.pt});
-$("ed").textContent=D?edT():t.ed;$("cnt").textContent=K(I)+" "+t.pt;$("ft").textContent=D?(L==="hi"?"अपडेट: ":"Updated: ")+tm(D.generated):t.ft;$("fl").textContent=t.fl;$("fn").textContent=t.fn;
+$("bn").style.display=D?"none":"flex";$("bt").textContent=t.bn;$("br").textContent=t.rt;$("ed").textContent=D?edT():t.ed;$("cnt").textContent=K(I)+" "+t.pt;$("ft").textContent=D?(L==="hi"?"अपडेट: ":"Updated: ")+tm(D.generated):t.ft;$("fl").textContent=t.fl;$("fn").textContent=t.fn;
 $("calm").textContent=t.calm[calm?1:0];$("th").textContent=t.th[TH==="dark"?0:1];$("calm").className="calm"+(calm?" on":"");
 document.documentElement.lang=L==="hi"?"hi":"en";
 var h="",pp=D&&D.sections[I]?D.sections[I].points:null;
-if(pp){pp.forEach(function(p){var u=/^https?:/.test(p.link)?p.link:"#";h+='<div class="card"><div class="n">'+esc(p.rank)+'</div><h3>'+esc(p.headline)+'</h3><p>'+esc(p.summary)+'</p><div class="meta"><span>'+esc(p.source)+' · '+tm(p.published)+'</span><em>'+t.ok+esc(p.confirmed)+'</em></div><a class="btn" href="'+esc(u)+'" target="_blank" rel="noopener">'+t.btn+'</a></div>'})}
-else for(var n=1;n<=s.k;n++){h+='<div class="card"><div class="n">'+n+'</div><h3>'+t.h+n+'</h3><p>'+t.s+'</p><div class="meta"><span>'+t.src+'</span><em>'+t.ok+(n%3+2)+'</em></div><button class="btn">'+t.btn+'</button></div>'}
+CUR=pp||[];if(pp){pp.forEach(function(p){var u=/^https?:/.test(p.link)?p.link:"#";h+='<div class="card"><div class="n">'+esc(p.rank)+'</div><h3>'+esc(p.headline)+'</h3><p>'+esc(p.summary)+'</p><div class="meta"><span>'+esc(p.source)+' · '+tm(p.published)+'</span><em>'+t.ok+esc(p.confirmed)+'</em></div></div>'})}
+else for(var n=1;n<=s.k;n++){h+='<div class="card"><div class="n">'+n+'</div><h3>'+t.h+n+'</h3><p>'+t.s+'</p><div class="meta"><span>'+t.src+'</span><em>'+t.ok+(n%3+2)+'</em></div></div>';CUR.push({rank:n,headline:t.h+n,summary:t.s,source:"Source name",published:"",confirmed:n%3+2,bullets:[],link:""})}
 $("cards").innerHTML=h;
-Array.prototype.forEach.call($("cards").children,function(c){c.onclick=function(){c.classList.toggle("open")}});
+Array.prototype.forEach.call($("cards").children,function(c,i){c.onclick=function(){if(CUR[i])openS(CUR[i])}});
 depth()}
 function depth(){
 var cs=$("cards").children,m=innerHeight/2;
@@ -123,6 +146,7 @@ var C={dark:["#ff5a52","#ffa62b","#34d399","#ffd24a"]};
 try{TH=localStorage.getItem("nfTheme")||"dark";if(TH!=="black")TH="dark"}catch(e){}
 function applyTheme(){document.documentElement.setAttribute("data-theme",TH);S.forEach(function(s,i){s.c=C.dark[i]});ring();draw()}
 $("th").onclick=function(){TH=TH==="dark"?"black":"dark";try{localStorage.setItem("nfTheme",TH)}catch(e){}applyTheme()};
+$("br").onclick=load;$("sh").onclick=function(e){if(e.target===$("sh"))closeS()};addEventListener("keydown",function(e){if(e.key==="Escape")closeS()});
 applyTheme();load();
 if("serviceWorker" in navigator){addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
 </script>

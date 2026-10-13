@@ -133,10 +133,11 @@ def edit(sec, clusters):
         "Below are candidate stories for the section: %s. Each shows the outlets that carried it.\n"
         "Pick the %d most important DIFFERENT stories (skip duplicates, gossip and opinion). Order by importance.\n"
         "For each write: en_headline (max 12 words), en_summary (max 25 words, plain words, no hype), "
-        "hi_headline and hi_summary (natural Hindi in Devanagari, same meaning).\n"
+        "hi_headline and hi_summary (natural Hindi in Devanagari, same meaning), and en_points and hi_points: "
+        "exactly 3 short bullet points each (max 18 words per bullet) with the key facts.\n"
         "Use ONLY facts present in the candidate text. Never add facts, names or numbers that are not given. "
         "Rewrite in your own words; do not copy sentences.\n"
-        'Return a JSON array: [{"i": 0, "en_headline": "", "en_summary": "", "hi_headline": "", "hi_summary": ""}]\n\n'
+        'Return a JSON array: [{"i": 0, "en_headline": "", "en_summary": "", "hi_headline": "", "hi_summary": "", "en_points": [], "hi_points": []}]\n\n'
         "Candidates:\n%s" % (sec["name"], sec["k"], "\n".join(lines)))
     res = gemini(prompt) if KEY else None
     picks = []
@@ -157,6 +158,9 @@ def edit(sec, clusters):
             picks.append((c, {"en_headline": t, "en_summary": "", "hi_headline": t, "hi_summary": ""}))
     return picks[: sec["k"]]
 
+def bl(x):
+    return [str(i) for i in x if i][:4] if isinstance(x, list) else []
+
 def main():
     now = dt.datetime.now(IST)
     edition = "morning" if now.hour < 12 else "evening"
@@ -176,6 +180,7 @@ def main():
                     "link": it["link"],
                     "published": it["date"].astimezone(IST).isoformat() if it["date"] else now.isoformat(),
                     "confirmed": len(c["sources"]),
+                    "bullets": bl(r.get(lang + "_points")),
                 })
             data[lang].append({"id": sec["id"], "points": pts})
         total += len(picks)
