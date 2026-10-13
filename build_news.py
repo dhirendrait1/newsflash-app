@@ -1,4 +1,4 @@
-import json, os, re, sys, time, html, difflib, urllib.request, datetime as dt
+import json, os, re, sys, time, html, difflib, urllib.request, urllib.error, datetime as dt
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
 
@@ -109,17 +109,54 @@ def collect(sec):
     clusters.sort(key=lambda c: (-len(c["sources"]), -(c["items"][0]["date"] or now).timestamp()))
     return clusters
 
+_MODELS = None
+
+def model_list():
+    global _MODELS
+    if _MODELS is not None:
+        return _MODELS
+    names = [m for m in [os.environ.get("GEMINI_MODEL"), "gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"] if m]
+    try:
+        raw = http("https://generativelanguage.googleapis.com/v1beta/models?pageSize=100", None, {"x-goog-api-key": KEY}, 30)
+        for m in json.loads(raw).get("models", []):
+            n = m.get("name", "").replace("models/", "")
+            if "flash" in n and "generateContent" in m.get("supportedGenerationMethods", []) \
+                    and not re.search(r"lite|image|tts|live|audio|thinking|exp|preview", n) and n not in names:
+                names.append(n)
+    except Exception as e:
+        print("could not list models:", e)
+    _MODELS = names
+    print("models to try:", names[:8])
+    return names
+
 def gemini(prompt):
-    url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent" % MODEL
+    if not KEY:
+        print("GEMINI_API_KEY is empty. Add it in Settings > Secrets and variables > Actions.")
+        return None
     body = json.dumps({"contents": [{"parts": [{"text": prompt}]}],
                        "generationConfig": {"responseMimeType": "application/json", "temperature": 0.2}}).encode()
-    for attempt in range(3):
-        try:
-            raw = http(url, body, {"Content-Type": "application/json", "x-goog-api-key": KEY}, 120)
-            return json.loads(json.loads(raw)["candidates"][0]["content"]["parts"][0]["text"])
-        except Exception as e:
-            print("gemini retry", attempt, e)
-            time.sleep(8 * (attempt + 1))
+    for name in model_list()[:6]:
+        url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent" % name
+        for attempt in range(2):
+            try:
+                raw = http(url, body, {"Content-Type": "application/json", "x-goog-api-key": KEY}, 180)
+                text = json.loads(raw)["candidates"][0]["content"]["parts"][0]["text"]
+                text = re.sub(r"^```(?:json)?|```$", "", text.strip()).strip()
+                res = json.loads(text)
+                if isinstance(res, list) and res:
+                    print("gemini ok with", name)
+                    return res
+                print("gemini gave an unusable answer:", name)
+                break
+            except urllib.error.HTTPError as e:
+                print("gemini", name, "HTTP", e.code, e.read()[:300])
+                if e.code in (429, 500, 503) and attempt == 0:
+                    time.sleep(15)
+                    continue
+                break
+            except Exception as e:
+                print("gemini", name, "error", e)
+                break
     return None
 
 def edit(sec, clusters):
@@ -163,7 +200,7 @@ def bl(x):
 
 def main():
     now = dt.datetime.now(IST)
-    edition = "morning" if now.hour < 12 else "evening"
+    edition = "morning" if now.hour < 14 else "evening"
     data = {"en": [], "hi": []}
     total = 0
     for sec in SECTIONS:
