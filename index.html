@@ -35,7 +35,7 @@ header{display:flex;align-items:center;justify-content:space-between}
 .face b{font-size:17px;font-weight:600;color:var(--c)}
 .face span{font-size:12px;color:var(--mu)}
 .face.on{opacity:1;box-shadow:0 0 28px -4px var(--c),inset 0 0 18px -8px var(--c)}
-.cards{margin-top:10px;perspective:800px}
+.cards{margin-top:10px}
 .card{position:relative;margin:0 0 12px;padding:14px 14px 12px 56px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(145deg,var(--g1),var(--g2));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:border-color .3s,box-shadow .3s;will-change:transform;box-shadow:0 8px 22px -12px var(--sh)}
 .card .n{position:absolute;left:12px;top:14px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:var(--ac);border:1px solid var(--ac);box-shadow:0 0 12px -2px var(--ac)}
 .card h3{margin:0 0 6px;font-size:15px;font-weight:600;line-height:1.35}
@@ -128,7 +128,7 @@ for(var i=0;i<cs.length;i++){
 if(calm){cs[i].style.transform="";cs[i].style.opacity=1;continue}
 var b=cs[i].getBoundingClientRect(),d=((b.top+b.height/2)-m)/innerHeight;
 d=Math.max(-1,Math.min(1,d));var a=Math.abs(d);
-cs[i].style.transform="translateZ("+(-a*70)+"px) rotateX("+(d*16)+"deg) scale("+(1-a*.04)+")";
+cs[i].style.transform="perspective(800px) translateZ("+(-a*40)+"px) rotateX("+(d*10)+"deg) scale("+(1-a*.03)+")";
 cs[i].style.opacity=Math.max(.35,1-a*.5)}}
 var q=false;addEventListener("scroll",function(){if(!q){q=true;requestAnimationFrame(function(){q=false;depth()})}},{passive:true});
 addEventListener("resize",depth);
