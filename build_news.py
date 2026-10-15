@@ -252,6 +252,50 @@ def bl(x):
     return [str(i) for i in x if i][:4] if isinstance(x, list) else []
 
 
+def outlets(c):
+    seen, out = set(), []
+    for it in c["items"]:
+        if it["source"] not in seen:
+            seen.add(it["source"])
+            out.append({"name": it["source"], "link": it["link"]})
+    return out[:6]
+
+
+def market():
+    out = {}
+    try:
+        cg = json.loads(http("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true", None, None, 20))
+        for k, n in (("bitcoin", "btc"), ("ethereum", "eth")):
+            if k in cg:
+                out[n] = {"usd": cg[k].get("usd"), "chg": cg[k].get("usd_24h_change")}
+    except Exception as e:
+        print("market crypto skipped:", e)
+    try:
+        fx = json.loads(http("https://open.er-api.com/v6/latest/USD", None, None, 20))
+        out["usdinr"] = fx["rates"]["INR"]
+    except Exception as e:
+        print("market fx skipped:", e)
+    return out
+
+
+def ask_groq(prompt):
+    gk = os.environ.get("GROQ_API_KEY", "").strip()
+    if not gk:
+        return None, "no GROQ_API_KEY"
+    model = os.environ.get("GROQ_MODEL") or "llama-3.3-70b-versatile"
+    body = json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}],
+                       "response_format": {"type": "json_object"}, "temperature": 0.2, "max_tokens": 7000}).encode()
+    try:
+        raw = http("https://api.groq.com/openai/v1/chat/completions", body,
+                   {"Content-Type": "application/json", "Authorization": "Bearer " + gk}, 120)
+        res = parse_result(json.loads(raw)["choices"][0]["message"]["content"])
+        return (res, "ok groq " + model) if res else (None, "groq unusable answer")
+    except urllib.error.HTTPError as e:
+        return None, "groq HTTP %s %s" % (e.code, e.read()[:120])
+    except Exception as e:
+        return None, "groq error %s" % e
+
+
 def build_prompt(cands, secs=None):
     parts = []
     for sec in (secs or SECTIONS):
@@ -297,6 +341,20 @@ def main():
                 got = (res2 or {}).get(s["id"])
                 if isinstance(got, list) and len(got) > len(res.get(s["id"]) or []):
                     res[s["id"]] = got
+    if os.environ.get("GROQ_API_KEY", "").strip():
+        gl = []
+        for s in SECTIONS:
+            if cands[s["id"]] and len(res.get(s["id"]) or []) < s["k"]:
+                time.sleep(25)
+                rg, sg = ask_groq(build_prompt(cands, [s]))
+                gl.append(s["id"] + ": " + sg)
+                got = (rg or {}).get(s["id"])
+                if isinstance(got, list) and len(got) > len(res.get(s["id"]) or []):
+                    res[s["id"]] = got
+        if gl:
+            status["backup_ai"] = gl
+    mk = market()
+    status["market"] = sorted(mk.keys())
     data = {"en": [], "hi": []}
     total = 0
     for sec in SECTIONS:
@@ -331,6 +389,7 @@ def main():
                     "published": it["date"].astimezone(IST).isoformat() if it["date"] else now.isoformat(),
                     "confirmed": len(c["sources"]),
                     "bullets": bl(r.get(lang + "_points")),
+                    "outlets": outlets(c),
                 })
             data[lang].append({"id": sec["id"], "points": pts})
         total += len(picks)
@@ -339,7 +398,7 @@ def main():
         sys.exit(1)
     os.makedirs(OUT, exist_ok=True)
     for lang in ("en", "hi"):
-        doc = {"edition": edition, "generated": now.isoformat(), "lang": lang, "sections": data[lang]}
+        doc = {"edition": edition, "generated": now.isoformat(), "lang": lang, "market": mk, "sections": data[lang]}
         with open(os.path.join(OUT, lang + ".json"), "w", encoding="utf-8") as f:
             json.dump(doc, f, ensure_ascii=False, indent=1)
     with open(os.path.join(OUT, "status.json"), "w", encoding="utf-8") as f:
